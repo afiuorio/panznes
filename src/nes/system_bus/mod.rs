@@ -17,7 +17,10 @@ impl<'a> Nes<'a> {
                 return match ppu_io_addr {
                     //todo should panic?
                     0 | 1 | 3 | 5 | 6 => 0,
-                    2 => self.ppustatus.bits(),
+                    2 => {
+                        self.ppu_second_write = false;
+                        self.ppustatus.bits()
+                    }
                     4 => {
                         let oam_addr = self.oam_addr;
                         self.oam_ram[oam_addr as usize]
@@ -96,6 +99,9 @@ impl<'a> Nes<'a> {
                 return match ppu_io_addr {
                     0 => {
                         self.ppuctrl = PPUCTRL::from_bits_truncate(value);
+                        //TODO use bitfield!!
+                        self.t_vram_addr =
+                            (self.t_vram_addr & 0xF3FF) | ((u16::from(value) & 0x3) << 10);
                     }
                     1 => {
                         self.ppumask = PPUMASK::from_bits_truncate(value);
@@ -113,27 +119,44 @@ impl<'a> Nes<'a> {
                     5 => {
                         let second_write = self.ppu_second_write;
                         if second_write {
+                            // t: FGH..AB CDE..... <- d: ABCDEFGH
+                            let y_part = (u16::from(value) & 0xF8) << 5;
+                            let head = (u16::from(value) & 0x7) << 12;
+
+                            self.t_vram_addr &= 0x0C1F;
+                            self.t_vram_addr = self.t_vram_addr | head | y_part;
+
                             self.vertical_scroll_origin =
                                 if value > 0xf0 { value - 0xf0 } else { value }
                         } else {
+                            self.ppu_fine_x_scroll = value & 0x7;
+                            self.t_vram_addr &= 0xFFE0;
+                            self.t_vram_addr = self.t_vram_addr | (u16::from(value) >> 3);
                             self.horizontal_scroll_origin = value
                         }
                         self.ppu_second_write = !second_write
                     }
                     6 => {
                         let second_write = self.ppu_second_write;
-                        let addr = self.vram_addr;
-                        let new_addr = if !second_write {
-                            (value as u16 & 0x3f) << 8
+                        if second_write {
+                            self.t_vram_addr &= 0xFF00;
+                            self.t_vram_addr = self.t_vram_addr | u16::from(value);
+                            self.vram_addr = self.t_vram_addr;
                         } else {
-                            addr | u16::from(value)
-                        };
+                            /* t: .CDEFGH ........ <- d: ..CDEFGH
+                                      <unused>     <- d: AB......
+                               t: Z...... ........ <- 0 (bit Z is cleared)
+                               w:                  <- 1
+                            */
 
-                        self.vram_addr = new_addr;
+                            let c = (u16::from(value) & 0x3F) << 8;
+                            self.t_vram_addr &= 0x80FF;
+                            self.t_vram_addr = self.t_vram_addr | c;
+                        };
                         self.ppu_second_write = !second_write
                     }
                     7 => {
-                        let vram_addr = self.vram_addr;
+                        let vram_addr = self.vram_addr & 0x3FFF;
                         self.write_ppu_byte(vram_addr, value);
                         //Increase vram_addr based on VRAM_INCREMENT bit
                         let horizontal_increment = self.ppuctrl.contains(PPUCTRL::VRAM_INCREMENT);

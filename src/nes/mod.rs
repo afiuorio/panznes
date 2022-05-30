@@ -52,15 +52,14 @@ pub struct Nes<'a> {
     oam_addr: u8,
     oam_ram: [u8; 0x100],
 
+    vram_addr: u16,
+    t_vram_addr: u16,
     ppu_second_write: bool,
+    ppu_fine_x_scroll: u8,
 
     horizontal_scroll_origin: u8,
     vertical_scroll_origin: u8,
 
-    horizontal_scroll_frame: u8,
-    vertical_scroll_frame: u8,
-
-    vram_addr: u16,
     vram_data: u8,
 
     chr_ram: [u8; 0x20000],
@@ -116,14 +115,13 @@ impl<'a> Nes<'a> {
             oam_ram: [0x0; 0x100],
 
             ppu_second_write: false,
+            ppu_fine_x_scroll: 0,
 
             horizontal_scroll_origin: 0,
             vertical_scroll_origin: 0,
 
-            horizontal_scroll_frame: 0,
-            vertical_scroll_frame: 0,
-
             vram_addr: 0x0,
+            t_vram_addr: 0x0,
             vram_data: 0x0,
             ppu_memory: [0x0; 0x10000],
 

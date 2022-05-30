@@ -7,47 +7,22 @@ impl<'a> Nes<'a> {
         // First, let's retrieve the tile row we need to render
         // Since we have scrolling, it's possible that the current line
         // is on the bottom nametable (mod 0x2000)
-        let line_with_offset =
-            current_scanline.wrapping_add(u16::from(self.vertical_scroll_origin));
-        let nametable =
-            (self.get_main_nametable() + if line_with_offset >= 240 { 0x800 } else { 0 }) & 0x2FFF;
-        let row_in_nametable = line_with_offset % 240; //line mod 240
-
-        let tile_index_start_row = (row_in_nametable / 8) * 32;
 
         //Now we can have the address (in the nametable) for the top-left tile of our screen
-        let nametable_row_address = nametable
-            .wrapping_add(tile_index_start_row)
-            //How many tiles we are x-offset from the starting of the row?
-            .wrapping_add(u16::from(self.horizontal_scroll_origin) >> 3);
-
-        let pixels_in_main_nametable = 256 - u16::from(self.horizontal_scroll_origin);
 
         //Which row of each tile we need to draw?
-        let tile_offset_y =
-            (current_scanline.wrapping_add(self.vertical_scroll_origin as u16)) & 0x7;
+        let tile_offset_y = (self.vram_addr & 0x7000) >> 12;
 
         //How much we are x-shifted during tile drawing?
-        let tile_x_offset = self.horizontal_scroll_origin & 0x7;
+        let tile_x_offset = self.ppu_fine_x_scroll;
 
-        let mut current_pixel = 0;
+        let mut current_pixel: u16 = 0;
 
         // I need to retrieve 33 tiles for this row starting from the top-left one.
         // A row is 32 tiles, however it's possible to see 33 tiles because of scrolling
-        for row_tile in 0..=32 {
-            // In the current nametable we have 32 - tile_x_offset tiles and on the right one we
-            // have tile_x_offset tiles
-            let nametable_x_offset: u16 = if u16::from(current_pixel) >= pixels_in_main_nametable {
-                0x3E0
-            } else {
-                0x000
-            };
-
+        while current_pixel <= 0xFF {
             //Let's take the tile address in the nametable
-            let nametable_tile_address = nametable_row_address
-                .wrapping_add(nametable_x_offset)
-                .wrapping_add(row_tile as u16)
-                & 0x2FFF;
+            let nametable_tile_address = 0x2000 | (self.vram_addr & 0x0FFF);
 
             //And using that, we can retrive the tile index in the tile pattern table
             let tile_index = self.read_ppu_byte(nametable_tile_address);
@@ -59,23 +34,12 @@ impl<'a> Nes<'a> {
 
             let pixels = Nes::get_tile_row_pixels(palette_msb, tile_first_plane, tile_second_plane);
 
-            let pixels_to_draw = match row_tile {
-                //First tile: I only need the pixels from tile_x_offset
-                0 => (tile_x_offset..=7),
-                //Middle tiles: I have to render the entire row
-                1..=31 => (0..=7),
-                //Last tile: I only need to render the tile_x_offset bits
-                32 => {
-                    if tile_x_offset > 0 {
-                        (0..=tile_x_offset - 1)
-                    } else {
-                        (1..=0)
-                    }
-                }
-                //This should never happens...
-                _ => {
-                    panic!("Too many tiles in this row")
-                }
+            let pixels_to_draw = if current_pixel == 0 {
+                (tile_x_offset..=7)
+            } else if current_pixel + 8 > 0xFF {
+                (0..=0xFF - (current_pixel as u8))
+            } else {
+                (0..=7)
             };
 
             for i in pixels_to_draw {
@@ -86,8 +50,20 @@ impl<'a> Nes<'a> {
                 } else {
                     0x3F00 + u16::from(pixels[i as usize])
                 };
-                self.render_pixel(palette_address, current_pixel, current_scanline as u8);
+                self.render_pixel(palette_address, current_pixel as u8, current_scanline as u8);
                 current_pixel = current_pixel.wrapping_add(1);
+            }
+
+            if current_pixel <= 0xFF {
+                if (self.vram_addr & 0x001F) == 31 {
+                    // if coarse X == 31
+                    self.vram_addr &= !0x001F; // coarse X = 0
+                    self.vram_addr ^= 0x0400;
+                }
+                // switch horizontal nametable
+                else {
+                    self.vram_addr += 1
+                } // increment coarse X
             }
         }
     }
