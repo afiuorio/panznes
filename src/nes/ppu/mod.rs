@@ -83,7 +83,7 @@ impl<'a> Nes<'a> {
                     //Must copy everything to from t to v
                     // v: GHIA.BC DEF..... <- t: GHIA.BC DEF.....
 
-                    let fine_y = self.t_vram_addr & 0x78B0;
+                    let fine_y = self.t_vram_addr & 0x7B00;
                     let coarse_y = self.t_vram_addr & 0x03E0;
                     self.vram_addr &= 0x041F;
                     self.vram_addr = self.vram_addr | fine_y | coarse_y;

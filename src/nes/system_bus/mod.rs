@@ -120,7 +120,7 @@ impl<'a> Nes<'a> {
                         let second_write = self.ppu_second_write;
                         if second_write {
                             // t: FGH..AB CDE..... <- d: ABCDEFGH
-                            let y_part = (u16::from(value) & 0xF8) << 5;
+                            let y_part = (u16::from(value) & 0xF8) << 2;
                             let head = (u16::from(value) & 0x7) << 12;
 
                             self.t_vram_addr &= 0x0C1F;
@@ -150,10 +150,14 @@ impl<'a> Nes<'a> {
                             */
 
                             let c = (u16::from(value) & 0x3F) << 8;
-                            self.t_vram_addr &= 0x80FF;
+                            self.t_vram_addr &= 0x00FF;
                             self.t_vram_addr = self.t_vram_addr | c;
                         };
-                        self.ppu_second_write = !second_write
+                        self.ppu_second_write = !second_write;
+                        println!(
+                            "value {:x}, vram_addr {:x}, t_vram_addr {:x}, second_write {}",
+                            value, self.vram_addr, self.t_vram_addr, second_write
+                        );
                     }
                     7 => {
                         let vram_addr = self.vram_addr & 0x3FFF;
