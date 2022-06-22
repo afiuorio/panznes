@@ -85,6 +85,12 @@ impl<'a> Nes<'a> {
                 let palette_index = (palette_msb << 2) | (palette_lsb as u8);
                 let x_pos = u16::from(sprite_x_position).wrapping_add(u16::from(current_pixel));
 
+                let tot_pos = ((current_scanline * 256) + x_pos) as usize;
+
+                if sprite_index == 0 && self.background_collision[tot_pos] && palette_index != 0 {
+                    self.ppustatus.insert(PPUSTATUS::SPRITE_0_HIT);
+                }
+
                 if x_pos < 256 {
                     self.render_pixel(
                         0x3F10 + u16::from(palette_index),

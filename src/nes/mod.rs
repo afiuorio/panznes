@@ -81,6 +81,8 @@ pub struct Nes<'a> {
     first_port_strobing_index: usize,
 
     serial: [u8; 0x20000],
+
+    background_collision: [bool; 256 * 240],
 }
 
 pub enum NesControllerButton {
@@ -142,6 +144,8 @@ impl<'a> Nes<'a> {
             chr_ram: [0; 0x20000],
 
             serial: [0; 0x20000],
+
+            background_collision: [false; 256 * 240],
         }
     }
 

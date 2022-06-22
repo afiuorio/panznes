@@ -32,7 +32,10 @@ impl<'a> Nes<'a> {
                         self.copy_horizontal_position();
                     }
                     self.current_scanline += 1;
-                    self.ppustatus.insert(PPUSTATUS::SPRITE_0_HIT);
+                    //TODO fix for super mario bros!
+                    /*if self.current_scanline == 32 {
+                        self.ppustatus.insert(PPUSTATUS::SPRITE_0_HIT);
+                    }*/
                 }
                 240 => {
                     if self.ppumask.contains(PPUMASK::SPRITES_ENABLED)
@@ -79,14 +82,14 @@ impl<'a> Nes<'a> {
                     {
                         self.increment_y();
                         self.copy_horizontal_position();
-                    }
-                    //Must copy everything to from t to v
-                    // v: GHIA.BC DEF..... <- t: GHIA.BC DEF.....
+                        //Must copy everything to from t to v
+                        // v: GHIA.BC DEF..... <- t: GHIA.BC DEF.....
 
-                    let fine_y = self.t_vram_addr & 0x7B00;
-                    let coarse_y = self.t_vram_addr & 0x03E0;
-                    self.vram_addr &= 0x041F;
-                    self.vram_addr = self.vram_addr | fine_y | coarse_y;
+                        let fine_y = self.t_vram_addr & 0x7B00;
+                        let coarse_y = self.t_vram_addr & 0x03E0;
+                        self.vram_addr &= 0x041F;
+                        self.vram_addr = self.vram_addr | fine_y | coarse_y;
+                    }
 
                     self.current_scanline = 0;
                 }
@@ -101,11 +104,11 @@ impl<'a> Nes<'a> {
 
     fn copy_horizontal_position(&mut self) {
         //v: ....A.. ...BCDEF <- t: ....A.. ...BCDEF
-        let coarseX = self.t_vram_addr & 0x1F;
+        let coarse_x = self.t_vram_addr & 0x1F;
         let nametable = self.t_vram_addr & 0x0400;
 
-        self.vram_addr &= 0x7BE0;
-        self.vram_addr = self.vram_addr | coarseX | nametable;
+        self.vram_addr &= !0x041F;
+        self.vram_addr = self.vram_addr | coarse_x | nametable;
     }
     fn increment_y(&mut self) {
         if (self.vram_addr & 0x7000) != 0x7000

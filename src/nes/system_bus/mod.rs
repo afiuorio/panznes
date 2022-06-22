@@ -130,7 +130,7 @@ impl<'a> Nes<'a> {
                                 if value > 0xf0 { value - 0xf0 } else { value }
                         } else {
                             self.ppu_fine_x_scroll = value & 0x7;
-                            self.t_vram_addr &= 0xFFE0;
+                            self.t_vram_addr &= !0x7;
                             self.t_vram_addr = self.t_vram_addr | (u16::from(value) >> 3);
                             self.horizontal_scroll_origin = value
                         }
@@ -154,10 +154,6 @@ impl<'a> Nes<'a> {
                             self.t_vram_addr = self.t_vram_addr | c;
                         };
                         self.ppu_second_write = !second_write;
-                        println!(
-                            "value {:x}, vram_addr {:x}, t_vram_addr {:x}, second_write {}",
-                            value, self.vram_addr, self.t_vram_addr, second_write
-                        );
                     }
                     7 => {
                         let vram_addr = self.vram_addr & 0x3FFF;
