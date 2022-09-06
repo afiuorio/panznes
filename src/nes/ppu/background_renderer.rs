@@ -51,9 +51,10 @@ impl<'a> Nes<'a> {
                     0x3F00 + u16::from(pixels[i as usize])
                 };
 
-                
-                self.background_collision[ ((current_scanline * 256) + current_pixel)as usize] 
-                    = pixels[i as usize] & 0x3 != 0;
+                self.background_collision[(u16::from(current_scanline)
+                    .mul(256)
+                    .wrapping_add(u16::from(current_pixel)))
+                    as usize] = (pixels[i as usize] & 0x3) != 0;
 
                 self.render_pixel(palette_address, current_pixel as u8, current_scanline as u8);
                 current_pixel = current_pixel.wrapping_add(1);

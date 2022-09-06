@@ -56,7 +56,6 @@ impl<'a> Nes<'a> {
                     //set VBlank, check if NMI is active and raise
                     let mut ppustatus = self.ppustatus;
                     ppustatus.insert(PPUSTATUS::V_BLANK);
-                    ppustatus.remove(PPUSTATUS::SPRITE_0_HIT);
                     self.ppustatus = ppustatus;
 
                     let ppuctrl = self.ppuctrl;
@@ -90,6 +89,7 @@ impl<'a> Nes<'a> {
                         self.vram_addr &= 0x041F;
                         self.vram_addr = self.vram_addr | fine_y | coarse_y;
                     }
+                    self.ppustatus.remove(PPUSTATUS::SPRITE_0_HIT);
 
                     self.current_scanline = 0;
                 }

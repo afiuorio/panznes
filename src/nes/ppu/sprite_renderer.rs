@@ -1,4 +1,3 @@
-use crate::nes::ppu::palette::NES_PALETTE;
 use crate::nes::ppu::registers::{PPUCTRL, PPUSTATUS};
 use crate::Nes;
 
@@ -82,12 +81,14 @@ impl<'a> Nes<'a> {
                     continue;
                 }
 
+                //TODO handle sprite priority
+
                 let palette_index = (palette_msb << 2) | (palette_lsb as u8);
                 let x_pos = u16::from(sprite_x_position).wrapping_add(u16::from(current_pixel));
 
                 let tot_pos = ((current_scanline * 256) + x_pos) as usize;
 
-                if sprite_index == 0 && self.background_collision[tot_pos] && palette_index != 0 {
+                if sprite_index == 0 && self.background_collision[tot_pos] {
                     self.ppustatus.insert(PPUSTATUS::SPRITE_0_HIT);
                 }
 
@@ -96,7 +97,7 @@ impl<'a> Nes<'a> {
                         0x3F10 + u16::from(palette_index),
                         x_pos as u8,
                         current_scanline as u8,
-                    )
+                    );
                 }
             }
         }

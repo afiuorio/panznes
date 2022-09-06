@@ -25,7 +25,14 @@ impl<'a> Nes<'a> {
                     CartridgeMirroring::HORIZONTAL => read_addr & 0xFBFF,
                     CartridgeMirroring::VERTICAL => read_addr & 0xF7FF,
                 };
-
+                if read_addr != ppu_addr {
+                    println!(
+                        "read addr {:x}, ppu_addr {:x}, mirror {:?}",
+                        read_addr,
+                        ppu_addr,
+                        self.cartridge.unwrap().namespace_mirroring
+                    );
+                }
                 self.ppu_memory[ppu_addr.wrapping_sub(0x2000) as usize]
             }
             //Mirror of 0x2000 .. 0x2EFF
@@ -73,7 +80,14 @@ impl<'a> Nes<'a> {
                     CartridgeMirroring::HORIZONTAL => write_addr & 0xFBFF,
                     CartridgeMirroring::VERTICAL => write_addr & 0xF7FF,
                 };
-
+                if write_addr != ppu_addr {
+                    println!(
+                        "Write addr {:x}, ppu_addr {:x}, mirror {:?}",
+                        write_addr,
+                        ppu_addr,
+                        self.cartridge.unwrap().namespace_mirroring
+                    );
+                }
                 self.ppu_memory[ppu_addr.wrapping_sub(0x2000) as usize] = value;
             }
             //Mirror of 0x2000 .. 0x2EFF
