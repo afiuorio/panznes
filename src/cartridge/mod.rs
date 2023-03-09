@@ -3,7 +3,7 @@ mod mappers;
 use crate::cartridge::mappers::mmc1::create_mmc1_from_rom;
 use crate::cartridge::mappers::nrom::create_nrom_from_rom;
 
-pub trait Mapper {
+pub trait Cartridge {
     fn read_pkg_byte(&mut self, addr: u16) -> u8;
     fn write_pkg_byte(&mut self, addr: u16, value: u8);
 
@@ -22,7 +22,7 @@ pub enum CartridgeMirroring {
     VERTICAL,
 }
 
-pub fn from_ines(rom: &Vec<u8>) -> Box<dyn Mapper> {
+pub fn from_ines(rom: &Vec<u8>) -> Box<dyn Cartridge> {
     //TODO check header
     let pkg_rom_size = rom[4] as usize * 16384;
     let chr_rom_size = rom[5] as usize * 8192;

@@ -1,4 +1,4 @@
-use crate::cartridge::{CartridgeMirroring, Mapper};
+use crate::cartridge::{Cartridge, CartridgeMirroring};
 use std::ops::{Add, Mul};
 
 pub struct MMC1 {
@@ -18,7 +18,7 @@ pub struct MMC1 {
     pub chr1_bank: u8,
 }
 
-impl Mapper for MMC1 {
+impl Cartridge for MMC1 {
     fn read_pkg_byte(&mut self, addr: u16) -> u8 {
         let pkg_rom_mode = (self.control_register & 0x0C) >> 2;
         let pkg_bank = u32::from(self.pkg_bank & 0xF);
@@ -149,7 +149,7 @@ impl Mapper for MMC1 {
     }
 }
 
-pub fn create_mmc1_from_rom(rom: &Vec<u8>) -> Box<impl Mapper> {
+pub fn create_mmc1_from_rom(rom: &Vec<u8>) -> Box<impl Cartridge> {
     let pkg_rom_size = rom[4] as usize * 16384;
     let chr_rom_size = rom[5] as usize * 8192;
     let flag6 = rom[6];

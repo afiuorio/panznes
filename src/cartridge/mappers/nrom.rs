@@ -1,4 +1,4 @@
-use crate::cartridge::{CartridgeMirroring, Mapper};
+use crate::cartridge::{Cartridge, CartridgeMirroring};
 
 pub struct NROM {
     pub pkg_rom: Vec<u8>,
@@ -8,7 +8,7 @@ pub struct NROM {
     pub namespace_mirroring: CartridgeMirroring,
 }
 
-impl Mapper for NROM {
+impl Cartridge for NROM {
     fn read_pkg_byte(&mut self, addr: u16) -> u8 {
         let pkg_rom_size = self.pkg_rom_size;
 
@@ -41,7 +41,7 @@ impl Mapper for NROM {
     }
 }
 
-pub fn create_nrom_from_rom(rom: &Vec<u8>) -> Box<impl Mapper> {
+pub fn create_nrom_from_rom(rom: &Vec<u8>) -> Box<impl Cartridge> {
     let pkg_rom_size = rom[4] as usize * 16384;
     let chr_rom_size = rom[5] as usize * 8192;
     let flag6 = rom[6];
