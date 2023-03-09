@@ -61,7 +61,7 @@ impl Nes {
             let tile_row_address = tile_address.wrapping_add(if sprite_attributes & 0x80 == 0 {
                 current_tile_row
             } else {
-                7 - current_tile_row
+                (sprite_size - 1) - current_tile_row
             });
             let tile_first_plane = self.read_ppu_byte(tile_row_address);
             let tile_second_plane = self.read_ppu_byte(tile_row_address.wrapping_add(8));

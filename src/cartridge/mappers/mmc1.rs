@@ -72,17 +72,17 @@ impl Cartridge for MMC1 {
         self.current_shift_loc += 1;
 
         if self.current_shift_loc == 5 {
-            match (addr & 0x6000) >> 13 {
-                0 => {
+            match addr {
+                0..=0x1FFF => {
                     self.control_register = self.shift_register;
                 }
-                1 => {
+                0x2000..=0x3FFF => {
                     self.chr0_bank = self.shift_register;
                 }
-                2 => {
+                0x4000..=0x5FFF => {
                     self.chr1_bank = self.shift_register;
                 }
-                3 => {
+                0x6000..=0x7FFF => {
                     self.pkg_bank = self.shift_register;
                 }
                 _ => {
@@ -99,8 +99,8 @@ impl Cartridge for MMC1 {
 
         // 8k mode
         if chr_mode == 0 {
-            let chr_bank = (self.chr0_bank & 0x1E) as usize;
-            let chr_addr = chr_bank.mul(0x2000).add(addr as usize);
+            let chr_bank = (self.chr0_bank & 0xFF) as usize;
+            let chr_addr = chr_bank.mul(0x1000).add(addr as usize);
             return self.chr_rom[chr_addr];
         }
 
@@ -120,8 +120,8 @@ impl Cartridge for MMC1 {
 
         // 8k mode
         if chr_mode == 0 {
-            let chr_bank = (self.chr0_bank & 0x1E) as usize;
-            let chr_addr = chr_bank.mul(0x2000).add(addr as usize);
+            let chr_bank = (self.chr0_bank & 0xFF) as usize;
+            let chr_addr = chr_bank.mul(0x1000).add(addr as usize);
             self.chr_rom[chr_addr] = value;
         }
 
