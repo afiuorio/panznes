@@ -73,9 +73,7 @@ pub struct Nes {
     controller_first_port: [bool; 8],
     first_port_strobing: bool,
     first_port_strobing_index: usize,
-
-    serial: [u8; 0x20000],
-
+    
     ppu_v: u16,
     ppu_t: u16,
     ppu_x: u8,
@@ -93,7 +91,7 @@ pub enum NesControllerButton {
 }
 
 impl Nes {
-    pub fn create_nes<T: Mapper + 'static>(cartridge: T) -> Nes {
+    pub fn create_nes(cartridge: Box<dyn Mapper>) -> Nes {
         Nes {
             a: 0,
             x: 0,
@@ -104,7 +102,7 @@ impl Nes {
 
             //Main WRAM
             cpu_memory: [0x0; 0x800],
-            cartridge: Box::new(cartridge),
+            cartridge,
 
             ppuctrl: PPUCTRL::from_bits_truncate(0),
             ppumask: PPUMASK::from_bits_truncate(0),
@@ -133,9 +131,7 @@ impl Nes {
             first_port_strobing_index: 0,
 
             chr_ram: [0; 0x20000],
-
-            serial: [0; 0x20000],
-
+            
             ppu_v: 0,
             ppu_t: 0,
             ppu_x: 0,

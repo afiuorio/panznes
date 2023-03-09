@@ -46,11 +46,8 @@ impl Nes {
         //PPU bus is 14 bit long, so every address in 0x4000..0xFFFF is mapped to 0x0000..0x3FFF
         let write_addr = addr & 0x3FFF;
         match write_addr {
-            //CHR_ROM. Some carts use this area for bank switching
-            //TODO This depends on cart mapping
             0..=0x1FFF => {
-                self.chr_ram[write_addr as usize] = value;
-                //TODO for now only mapping 0
+                self.cartridge.write_chr_byte(write_addr, value);
             }
             //Nametables
             //TODO this depends on cart mirroring!

@@ -67,7 +67,7 @@ impl Nes {
             //Expansion ROM (only certain mappers)
             0x4020..=0x5FFF => 0,
             //Cart RAM
-            0x6000..=0x7FFF => 0,
+            0x6000..=0x7FFF => self.cartridge.read_ram_byte(addr - 0x6000),
             0x8000..=0xFFFF => self.cartridge.read_pkg_byte(addr - 0x8000),
         };
     }
@@ -159,9 +159,7 @@ impl Nes {
             //Expansion ROM (only certain mappers
             0x4020..=0x5FFF => {}
             //Cart RAM
-            0x6000..=0x7FFF => {
-                self.serial[addr as usize - 0x6000] = value;
-            }
+            0x6000..=0x7FFF => self.cartridge.write_ram_byte(addr - 0x6000, value),
             //PGR_ROM
             0x8000..=0xFFFF => {
                 self.cartridge.write_pkg_byte(addr - 0x8000, value);
