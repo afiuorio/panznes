@@ -1,4 +1,4 @@
-use crate::nes::ppu::registers::{PPUCTRL, PPUMASK, PPUSTATUS};
+use crate::nes::ppu::registers::{PPUMASK, PPUSTATUS};
 use crate::nes::Nes;
 
 mod background_renderer;
@@ -34,10 +34,7 @@ impl Nes {
                     ppustatus.remove(PPUSTATUS::SPRITE_0_HIT);
                     self.ppustatus = ppustatus;
 
-                    let ppuctrl = self.ppuctrl;
-                    if ppuctrl.contains(PPUCTRL::NMI_ENABLED) {
-                        self.raise_nmi();
-                    }
+                    self.ppustatus.insert(PPUSTATUS::V_BLANK);
                     self.current_scanline += 1;
                 }
                 //VBlank = do nothing
@@ -48,6 +45,7 @@ impl Nes {
                 261 => {
                     self.ppu_v = (self.ppu_v & 0x041F) | (u16::from(self.ppu_t & 0xFBE0));
                     self.current_scanline = 0;
+                    self.ppustatus.remove(PPUSTATUS::V_BLANK);
                 }
                 _ => {
                     //TODO panic

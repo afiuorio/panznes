@@ -1,5 +1,6 @@
 use crate::memory::Memory;
 use crate::nes::cpu::opcodes::OPCODES;
+use crate::nes::ppu::registers::{PPUCTRL, PPUSTATUS};
 use crate::nes::{FlagRegister, Interrupt, Nes};
 
 mod opcodes;
@@ -16,8 +17,11 @@ impl Memory for Nes {
 
 impl Nes {
     pub fn execute_instruction(&mut self) -> u32 {
-        if self.raised_nmi == true {
-            self.raised_nmi = false;
+        if self.ppuctrl.contains(PPUCTRL::NMI_ENABLED)
+            && self.ppustatus.contains(PPUSTATUS::V_BLANK)
+        {
+            self.ppuctrl.remove(PPUCTRL::NMI_ENABLED);
+            self.ppustatus.remove(PPUSTATUS::V_BLANK);
             return self.raise_interrupt(Interrupt::NMI);
         }
 

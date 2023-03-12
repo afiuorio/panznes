@@ -1,4 +1,4 @@
-use crate::cartridge::{Cartridge, CartridgeMirroring};
+use crate::cartridge::Cartridge;
 use std::ops::{Add, Mul};
 
 pub struct MMC1 {
@@ -6,7 +6,6 @@ pub struct MMC1 {
     pub pkg_rom_size: usize,
     pub chr_rom: Vec<u8>,
     pub chr_rom_size: usize,
-    pub namespace_mirroring: CartridgeMirroring,
     pub mapper: u8,
     pub ram: Vec<u8>,
 
@@ -59,7 +58,7 @@ impl Cartridge for MMC1 {
 
     fn write_pkg_byte(&mut self, addr: u16, value: u8) {
         if (value & 0x80) != 0 {
-            self.shift_register = 0;
+            self.shift_register = 0x10;
             self.current_shift_loc = 0;
             self.control_register = self.control_register | 0x0C;
             return;
@@ -99,7 +98,7 @@ impl Cartridge for MMC1 {
 
         // 8k mode
         if chr_mode == 0 {
-            let chr_bank = (self.chr0_bank & 0xFF) as usize;
+            let chr_bank = (self.chr0_bank & 0x1) as usize;
             let chr_addr = chr_bank.mul(0x1000).add(addr as usize);
             return self.chr_rom[chr_addr];
         }
@@ -111,7 +110,7 @@ impl Cartridge for MMC1 {
         };
 
         let chr_bank = current_bank_reg as usize;
-        let chr_addr = chr_bank.mul(0x1000).add(addr as usize);
+        let chr_addr = chr_bank.mul(0x2000).add(addr as usize);
         return self.chr_rom[chr_addr];
     }
 
@@ -120,8 +119,8 @@ impl Cartridge for MMC1 {
 
         // 8k mode
         if chr_mode == 0 {
-            let chr_bank = (self.chr0_bank & 0xFF) as usize;
-            let chr_addr = chr_bank.mul(0x1000).add(addr as usize);
+            let chr_bank = (self.chr0_bank & 0x1) as usize;
+            let chr_addr = chr_bank.mul(0x2000).add(addr as usize);
             self.chr_rom[chr_addr] = value;
         }
 
@@ -144,15 +143,24 @@ impl Cartridge for MMC1 {
         self.ram[addr as usize] = value;
     }
 
-    fn get_namespace_mirroring(&mut self) -> CartridgeMirroring {
-        return self.namespace_mirroring.clone();
+    fn get_namespace_mirrored_address(&mut self, addr: u16) -> u16 {
+        let base_addr = addr & 0x3FF;
+
+        return match self.control_register & 0x3 {
+            0 => base_addr,
+            1 => 0x400 | base_addr,
+            3 => ((addr & 0x800) >> 1) | base_addr,
+            2 => (addr & 0x400) | base_addr,
+            _ => {
+                panic!("Error mirroring")
+            }
+        };
     }
 }
 
 pub fn create_mmc1_from_rom(rom: &Vec<u8>) -> Box<impl Cartridge> {
     let pkg_rom_size = rom[4] as usize * 16384;
     let chr_rom_size = rom[5] as usize * 8192;
-    let flag6 = rom[6];
 
     let pkg_rom_start_index = 16;
     let chr_rom_start_index = pkg_rom_start_index + pkg_rom_size;
@@ -160,15 +168,9 @@ pub fn create_mmc1_from_rom(rom: &Vec<u8>) -> Box<impl Cartridge> {
     let pkg_rom = rom[pkg_rom_start_index..pkg_rom_start_index + pkg_rom_size].to_vec();
     //The cartridge could use chr_ram...
     let chr_rom = if chr_rom_size == 0 {
-        vec![0; 0xFFFFF]
+        vec![0; 0x2000]
     } else {
         rom[chr_rom_start_index..chr_rom_start_index + chr_rom_size].to_vec()
-    };
-
-    let namespace_mirroring = if flag6 & 0x1 == 0 {
-        CartridgeMirroring::HORIZONTAL
-    } else {
-        CartridgeMirroring::VERTICAL
     };
 
     return Box::new(MMC1 {
@@ -176,7 +178,6 @@ pub fn create_mmc1_from_rom(rom: &Vec<u8>) -> Box<impl Cartridge> {
         pkg_rom_size,
         chr_rom,
         chr_rom_size,
-        namespace_mirroring,
         mapper: 1,
         ram: vec![0; 0x2000],
         shift_register: 0x10,

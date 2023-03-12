@@ -1,4 +1,3 @@
-use crate::cartridge::CartridgeMirroring;
 use crate::Nes;
 
 impl Nes {
@@ -7,16 +6,13 @@ impl Nes {
 
         return match read_addr {
             //CHR_ROM
-            //TODO This depends on cart mapping
             0..=0x1FFF => self.cartridge.read_chr_byte(read_addr),
             //Nametables
             0x2000..=0x2FFF => {
-                let ppu_addr = match self.cartridge.get_namespace_mirroring() {
-                    CartridgeMirroring::HORIZONTAL => read_addr & 0xFBFF,
-                    CartridgeMirroring::VERTICAL => read_addr & 0xF7FF,
-                };
-
-                self.ppu_memory[ppu_addr.wrapping_sub(0x2000) as usize]
+                let ppu_addr = self
+                    .cartridge
+                    .get_namespace_mirrored_address(read_addr.wrapping_sub(0x2000));
+                self.ppu_memory[ppu_addr as usize]
             }
             //Mirror of 0x2000 .. 0x2EFF
             0x3000..=0x3EFF => {
@@ -50,14 +46,11 @@ impl Nes {
                 self.cartridge.write_chr_byte(write_addr, value);
             }
             //Nametables
-            //TODO this depends on cart mirroring!
             0x2000..=0x2FFF => {
-                let ppu_addr = match self.cartridge.get_namespace_mirroring() {
-                    CartridgeMirroring::HORIZONTAL => write_addr & 0xFBFF,
-                    CartridgeMirroring::VERTICAL => write_addr & 0xF7FF,
-                };
-
-                self.ppu_memory[ppu_addr.wrapping_sub(0x2000) as usize] = value;
+                let ppu_addr = self
+                    .cartridge
+                    .get_namespace_mirrored_address(write_addr.wrapping_sub(0x2000));
+                self.ppu_memory[ppu_addr as usize] = value;
             }
             //Mirror of 0x2000 .. 0x2EFF
             0x3000..=0x3EFF => {

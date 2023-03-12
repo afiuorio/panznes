@@ -54,9 +54,7 @@ pub struct Nes {
 
     vram_data: u8,
 
-    chr_ram: [u8; 0x20000],
-
-    ppu_memory: [u8; 0x10000],
+    ppu_memory: [u8; 0x800],
 
     request_dma: bool,
     dma_src: u16,
@@ -64,7 +62,6 @@ pub struct Nes {
     current_scanline: u32,
     clock_current_scanline: u32,
 
-    raised_nmi: bool,
     palettes: [u8; 0x20],
 
     pub screen: [u32; 256 * 240],
@@ -113,7 +110,7 @@ impl Nes {
             ppu_second_write: false,
 
             vram_data: 0x0,
-            ppu_memory: [0x0; 0x10000],
+            ppu_memory: [0x0; 0x800],
 
             request_dma: false,
             dma_src: 0x0,
@@ -121,16 +118,12 @@ impl Nes {
             current_scanline: 0,
             clock_current_scanline: 0,
 
-            raised_nmi: false,
-
             palettes: [0x0; 0x20],
             screen: [0x0; 256 * 240],
             background_hit_flag: [false; 256 * 240],
             controller_first_port: [false; 8],
             first_port_strobing: false,
             first_port_strobing_index: 0,
-
-            chr_ram: [0; 0x20000],
 
             ppu_v: 0,
             ppu_t: 0,

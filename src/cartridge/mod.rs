@@ -13,13 +13,15 @@ pub trait Cartridge {
     fn read_ram_byte(&mut self, addr: u16) -> u8;
     fn write_ram_byte(&mut self, addr: u16, value: u8);
 
-    fn get_namespace_mirroring(&mut self) -> CartridgeMirroring;
+    fn get_namespace_mirrored_address(&mut self, addr: u16) -> u16;
 }
 
 #[derive(Copy, Clone)]
 pub enum CartridgeMirroring {
     HORIZONTAL,
     VERTICAL,
+    SingleScreenLower,
+    SingleScreenUpper
 }
 
 pub fn from_ines(rom: &Vec<u8>) -> Box<dyn Cartridge> {

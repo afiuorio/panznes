@@ -36,8 +36,16 @@ impl Cartridge for NROM {
 
     fn write_ram_byte(&mut self, _addr: u16, _value: u8) {}
 
-    fn get_namespace_mirroring(&mut self) -> CartridgeMirroring {
-        return self.namespace_mirroring.clone();
+    fn get_namespace_mirrored_address(&mut self, addr: u16) -> u16 {
+        let base_addr = addr & 0x3FF;
+
+        return match self.namespace_mirroring {
+            CartridgeMirroring::HORIZONTAL => ((addr & 0x800) >> 1) | base_addr,
+            CartridgeMirroring::VERTICAL => (addr & 0x400) | base_addr,
+            _ => {
+                panic!("Mirror not supported")
+            }
+        };
     }
 }
 
@@ -51,7 +59,11 @@ pub fn create_nrom_from_rom(rom: &Vec<u8>) -> Box<impl Cartridge> {
 
     let pkg_rom = rom[pkg_rom_start_index..pkg_rom_start_index + pkg_rom_size].to_vec();
     //The cartridge could use chr_ram...
-    let chr_rom = rom[chr_rom_start_index..chr_rom_start_index + chr_rom_size].to_vec();
+    let chr_rom = if chr_rom_size != 0 {
+        rom[chr_rom_start_index..chr_rom_start_index + chr_rom_size].to_vec()
+    } else {
+        vec![0; 0x2000]
+    };
 
     let namespace_mirroring = if flag6 & 0x1 == 0 {
         CartridgeMirroring::HORIZONTAL
